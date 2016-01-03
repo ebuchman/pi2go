@@ -12,14 +12,18 @@ func StripSpaces(str string) string {
 }
 
 var text = []string{
-	`alph?(bbb).c!(b).d!(e).0 + g?(r).( c?(a).0 | 0 | d!(b).0)`,
+	`select{alph?(bbb).c!(b).d!(e).0 ; g?(r).( c?(a).0 | 0 | d!(b).0)}`,
 	`(a?(b).0 | b!(a).0)`,
-	`a!(b).(a?(b).0 + c?(d).0)`,
-	`( a?(b).(c?(d).(e?(f).0 + g?(h).0) + i?(j).0) | k?(l).0 )`,
-	`( a?(b).(c?(d).((e?(f).0 + g?(h).0) | (f?(e).0 + h?(g).0)) + i?(j).0) | k?(l).0 )`,
+	`select{a?(b).0 ; b?(a).0}`,
+	`a!(b).select{a?(b).0 ; c?(d).0}`,
+	`( a?(b).select{c?(d).select{e?(f).0 ;g?(h).0} ; i?(j).0} | k?(l).0 )`,
+	`( a?(b).select{c?(d).(select{e?(f).0 ;g?(h).0} | select{f?(e).0 ; h?(g).0}) ; i?(j).0} | k?(l).0 )`,
+	`new a, b, c in (a?(b).0 | b?(a).0)`,
 }
 
-var tokens = []tokenType{
+var tokens = []TokenType{
+	tokenSelectTy,
+	tokenLeftCurlBraceTy,
 	tokenStringTy,
 	tokenPullTy,
 	tokenLeftBraceTy,
@@ -40,7 +44,7 @@ var tokens = []tokenType{
 	tokenDotTy,
 	tokenZeroTy,
 
-	tokenChoiceTy,
+	tokenSemiColonTy,
 
 	tokenStringTy,
 	tokenPullTy,
@@ -70,6 +74,8 @@ var tokens = []tokenType{
 	tokenDotTy,
 	tokenZeroTy,
 	tokenRightBraceTy,
+
+	tokenRightCurlBraceTy,
 }
 
 func TestLexer(t *testing.T) {
@@ -77,18 +83,19 @@ func TestLexer(t *testing.T) {
 	i := 0
 	for tok := range l.Chan() {
 		if tok.typ != tokens[i] {
-			t.Fatal("Error", tok.typ, tokens[i])
+			t.Fatalf("Got %s, expected %s. Token %d", tok.typ, tokens[i], i)
 		}
 		i += 1
 	}
 }
 
-// TODO: proper test
 func TestParse(t *testing.T) {
 	for _, t_ := range text {
 		fmt.Println("Text:", t_)
 		p := Parse(t_)
-		p.run()
+
+		//RecursivePrint(p.P, 0)
+
 		b := new(bytes.Buffer)
 		printer := NewPrinter(b)
 		printer.PrintParser(p)

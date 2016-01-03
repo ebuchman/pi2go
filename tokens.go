@@ -19,76 +19,70 @@ func (t token) String() string {
 }
 
 // token types
-type tokenType int
+type TokenType int
 
-func (t tokenType) String() string {
-	switch t {
-	case tokenErrTy:
-		return "[Error]"
-	case tokenEOFTy:
-		return "[EOF]"
-	case tokenLeftBraceTy:
-		return "[LeftBrace]"
-	case tokenRightBraceTy:
-		return "[RightBrace]"
-	case tokenNewLineTy:
-		return "[NewLine]"
-	case tokenPoundTy:
-		return "[Pound]"
-	case tokenSpaceTy:
-		return "[Space]"
-	case tokenStringTy:
-		return "[String]"
-	case tokenFireTy:
-		return "[Fire]"
-	case tokenPullTy:
-		return "[Pull]"
-	case tokenChoiceTy:
-		return "[Choice]"
-	case tokenParTy:
-		return "[Par]"
-	case tokenDotTy:
-		return "[Dot]"
-	case tokenZeroTy:
-		return "[Zero]"
-	}
-	return "[Unknown]"
-}
+//go:generate stringer -type=TokenType
 
 // token types
 const (
-	tokenErrTy tokenType = iota // error
+	tokenErrTy TokenType = iota // error
 	tokenEOFTy                  // end of file
 
-	tokenLeftBraceTy  // (
-	tokenRightBraceTy // )
-	tokenNewLineTy    // \n
-	tokenPoundTy      // #
-	tokenSpaceTy      // spaces
-	tokenStringTy     // var names, comments
+	tokenLeftBraceTy        // (
+	tokenRightBraceTy       // )
+	tokenLeftSquareBraceTy  // [
+	tokenRightSquareBraceTy // ]
+	tokenLeftCurlBraceTy    // {
+	tokenRightCurlBraceTy   // }
+	tokenNewLineTy          // \n
+	tokenPoundTy            // #
+	tokenSpaceTy            // spaces
+	tokenStringTy           // var names, comments
 
-	tokenFireTy   // !
-	tokenPullTy   // ?
-	tokenChoiceTy //+
-	tokenParTy    // |
-	tokenDotTy    // .
-	tokenZeroTy   // 0
+	tokenFireTy      // !
+	tokenPullTy      // ?
+	tokenChoiceTy    //+
+	tokenParTy       // |
+	tokenDotTy       // .
+	tokenCommaTy     // ,
+	tokenSemiColonTy // ;
+	tokenEqualsTy    // =
+
+	tokenZeroTy    // 0
+	tokenTauTy     // tau
+	tokenEpsilonTy // epsilon
+	tokenNewTy     // new
+	tokenInTy      // in
+	tokenSelectTy  // select
 )
 
 // tokens and special chars
 var (
-	tokenLeftBrace  = "("
-	tokenRightBrace = ")"
-	tokenNewLine    = "\n"
-	tokenPound      = "#"
-	tokenSpace      = " "
+	tokenLeftBrace        = "("
+	tokenRightBrace       = ")"
+	tokenLeftSquareBrace  = "["
+	tokenRightSquareBrace = "]"
+	tokenLeftCurlBrace    = "{"
+	tokenRightCurlBrace   = "}"
+	tokenNewLine          = "\n"
+	tokenPound            = "#"
+	tokenSpace            = " "
 
-	tokenFire   = "!"
-	tokenPull   = "?"
-	tokenChoice = "+"
-	tokenPar    = "|"
-	tokenDot    = "."
-	tokenZero   = "0"
+	tokenFire      = "!"
+	tokenPull      = "?"
+	tokenChoice    = "+"
+	tokenPar       = "|"
+	tokenDot       = "."
+	tokenComma     = ","
+	tokenEquals    = "="
+	tokenSemiColon = ";"
+
+	tokenZero    = "0"
+	tokenTau     = "tau"
+	tokenEpsilon = "epsilon"
+	tokenNew     = "new"
+	tokenIn      = "in"
+	tokenSelect  = "select"
 
 	tokenChars = "abcdefghijklmnopqrstuvwqyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_"
 )

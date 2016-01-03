@@ -8,7 +8,6 @@ import (
 func Compile(text string, w io.Writer) {
 	c := compiler{w}
 	p := Parse(text)
-	p.run()
 	c.Compile(p.P)
 }
 
@@ -23,9 +22,16 @@ func (c *compiler) Printf(s string, args ...interface{}) {
 }
 
 func (c *compiler) Compile(p *Process) {
-	c.compileProcess((*p)[0])
-	if p.Len() > 1 {
-		for _, p_ := range *p {
+	c.compileProcess(p)
+}
+
+func (c *compiler) compileProcess(p *Process) {
+	if len(p.sum) > 0 {
+		c.compileSum(p.sum)
+	} else if len(p.par) == 1 {
+		c.Compile(p.par[0])
+	} else if len(p.par) > 1 {
+		for _, p_ := range p.par {
 			// concurrent processes
 			c.Printf("go func(){\n")
 			c.compileProcess(p_)
@@ -34,25 +40,17 @@ func (c *compiler) Compile(p *Process) {
 	}
 }
 
-func (c *compiler) compileProcess(p *process) {
-	if p.sum.Len() > 0 {
-		c.compileSum(p.sum)
-	} else if p.proc.Len() > 0 {
-		c.Compile(p.proc)
-	}
-}
-
-func (c *compiler) compileSum(s *sum) {
-	if s.Len() == 1 {
+func (c *compiler) compileSum(s []*PrefixProcess) {
+	if len(s) == 1 {
 		// blocking single action
-		proc := (*s)[0]
+		proc := s[0]
 		c.compileAction(proc.action)
 		c.Printf("\n")
 		c.Compile(proc.proc)
 	} else {
 		// select block
 		c.Printf("select{\n")
-		for _, p := range *s {
+		for _, p := range s {
 			c.Printf("case ")
 			c.compileAction(p.action)
 			c.Printf(":\n")
@@ -62,7 +60,7 @@ func (c *compiler) compileSum(s *sum) {
 	}
 }
 
-func (c *compiler) compileAction(a *action) {
+func (c *compiler) compileAction(a *Action) {
 	switch a.typ {
 	case ActionTypeFire:
 		c.Printf("%s <- %s", a.subject.val, a.object.val)

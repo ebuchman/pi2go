@@ -3,56 +3,33 @@ package pi2go
 import (
 	"fmt"
 	"io"
+	"strings"
 )
 
 //------------------------
 // process tree
 
-type Process []*process // concurrent processes
+type Process struct {
+	isZero bool
+	names  []string
 
-func (p *Process) Append(proc ...*process) {
-	*p = append(*p, proc...)
+	sum []*PrefixProcess
+	par []*Process
 }
 
-func (p *Process) Len() int {
-	if p == nil {
-		return 0
-	}
-	return len(*p)
-}
-
-type process struct {
-	isZero bool     // if the process is 0
-	sum    *sum     // if its a sum
-	proc   *Process // if its a process in brackets
-}
-
-type sum []*prefixedProcess
-
-func (s *sum) Append(proc ...*prefixedProcess) {
-	*s = append(*s, proc...)
-}
-
-func (s *sum) Len() int {
-	if s == nil {
-		return 0
-	}
-	return len(*s)
-}
-
-type prefixedProcess struct {
-	action *action
+type PrefixProcess struct {
+	action *Action
 	proc   *Process
 }
 
 // an action either sends or receives on a channel
-type action struct {
+type Action struct {
 	typ     ActionType
 	subject token
 	object  token
 }
 
-func (a action) String() string {
+func (a *Action) String() string {
 	var s string
 	if a.typ == ActionTypeFire {
 		s = "!"
@@ -69,9 +46,56 @@ const (
 	ActionTypePull
 )
 
+func tabs(i int) string {
+	return strings.Repeat("\t", i)
+}
+
 //------------------------------------------------
 // Print functions
 
+// print the tree with lots of space
+func RecursivePrint(p *Process, i int) {
+	if p.isZero {
+		fmt.Println(tokenZero)
+		return
+	}
+
+	if len(p.names) > 0 {
+		fmt.Println(tabs(i-1), p.names)
+	}
+
+	if len(p.sum) > 0 {
+		if len(p.sum) > 1 {
+			fmt.Printf("\n%s", tabs(i))
+		}
+		recursivePrintPrefix(p.sum[0], i+1)
+		for _, p_ := range p.sum[1:] {
+			fmt.Printf("\n%s", tabs(i-1))
+			fmt.Println(tokenChoice)
+			fmt.Printf("\n%s", tabs(i))
+			recursivePrintPrefix(p_, i+1)
+		}
+	} else if len(p.par) > 0 {
+		if len(p.par) > 1 {
+			fmt.Printf("\n%s", tabs(i))
+		}
+		RecursivePrint(p.par[0], i+1)
+		for _, p_ := range p.par[1:] {
+			fmt.Printf("%s", tabs(i-1))
+			fmt.Println(tokenPar)
+			fmt.Printf("%s", tabs(i))
+			RecursivePrint(p_, i+1)
+		}
+
+	}
+}
+
+func recursivePrintPrefix(p *PrefixProcess, i int) {
+	fmt.Printf("%s.", p.action)
+	RecursivePrint(p.proc, i)
+}
+
+// write the tree out on one line
 type printer struct {
 	io.Writer
 }
@@ -85,48 +109,62 @@ func (p printer) Printf(s string, args ...interface{}) {
 }
 
 func (p printer) PrintParser(parser *parser) {
-	p.printParallelProcess(parser.P, false)
+	p.printProcess(parser.P, false)
 	fmt.Printf("\n")
 }
 
-func (p printer) printPrefixProcess(proc *prefixedProcess, prefixed bool) {
-	p.Printf(proc.action.String())
+func (p printer) printPrefixProcess(preProc *PrefixProcess, prefixed bool) {
+	p.Printf(preProc.action.String())
 	p.Printf(".")
-	p.printParallelProcess(proc.proc, true)
+	p.printProcess(preProc.proc, true)
 }
 
-func (p printer) printProcess(proc *process, prefixed bool) {
+func (p printer) printProcess(proc *Process, prefixed bool) {
 	if proc.isZero {
 		p.Printf("0")
-	} else if proc.sum.Len() > 0 {
-		if prefixed && proc.sum.Len() > 1 {
-			p.Printf("( ")
+		return
+	}
+
+	if len(proc.names) > 0 {
+		p.Printf("new")
+		p.Printf("%s", proc.names[0])
+		for _, n := range proc.names[1:] {
+			p.Printf(",%s", n)
 		}
-		sum := *proc.sum
-		p.printPrefixProcess(sum[0], prefixed)
-		if proc.sum.Len() > 1 {
-			for _, _proc := range sum[1:] {
-				p.Printf(" + ")
+		p.Printf("in")
+	}
+
+	if len(proc.sum) > 0 {
+		sumL := len(proc.sum)
+		if sumL > 1 {
+			p.Printf("select{")
+		}
+
+		p.printPrefixProcess(proc.sum[0], prefixed)
+		if sumL > 1 {
+			for _, _proc := range proc.sum[1:] {
+				p.Printf(" ;")
 				p.printPrefixProcess(_proc, true)
 			}
 		}
-		if prefixed && proc.sum.Len() > 1 {
-			p.Printf(" )")
+		if sumL > 1 {
+			p.Printf("}")
 		}
-	} else if proc.proc.Len() > 0 {
-		p.printParallelProcess(proc.proc, prefixed)
+	} else if len(proc.par) > 0 {
+		p.printParallelProcess(proc.par, prefixed)
 	} else {
 		panic("wtf")
 	}
 }
 
-func (p printer) printParallelProcess(proc *Process, prefixed bool) {
-	if proc.Len() > 1 {
+func (p printer) printParallelProcess(procs []*Process, prefixed bool) {
+	procL := len(procs)
+	if procL > 1 {
 		p.Printf("( ")
 	}
-	p.printProcess((*proc)[0], prefixed)
-	if proc.Len() > 1 {
-		for _, _proc := range (*proc)[1:] {
+	p.printProcess(procs[0], prefixed)
+	if procL > 1 {
+		for _, _proc := range procs[1:] {
 			p.Printf(" | ")
 			p.printProcess(_proc, prefixed)
 		}

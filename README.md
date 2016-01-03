@@ -1,19 +1,30 @@
 # pi2go
 Compile pi calculus expressions to golang
 
-We use a syncronous pi calculus without replication. The grammar is as follows:
+We use a syncronous pi calculus with parametric recursion. 
+The grammar is taken from [SLMC](http://ctp.di.fct.unl.pt/SLMC/)
 
 ```
-Process := process [ "|" Process ]
-process := "0" | "(" Process ")" | sum
-sum := prefix "." { prefix "." } Process [ "+" sum ]
-prefix := fire | pull
-fire := ident "!" "(" ident ")"
-pull := ident "?" "(" ident ")"
-```
+lower = ['a'-'z']
+upper = ['A'-'Z']
+letter = lower | upper
+digit  = ['0'-'9']
+name = lower (letter | digit | '_')*
+namelist := 	epsilon | name (',' name)*
+prefix 	:=	name!(namelist)
+	|	name?(namelist)
+	|	[name = name]
+	|	[name != name]
+	| 	tau
+process := 	0
+	|	process | process
+	| 	'new' namelist 'in' process
+	|	prefix.process
+	| 	select{ prefix.process (';' prefix.process)* }
+	|	CapsID(namelist)
+	| 	( process )
 
-Here, `[ ]` encloses an optional term, while `{ }` encloses a term repeated 0 or more times.
-Terminals are enclosed in `" "`.
+```
 
 # Roadmap
 - parse multiple lines (sequence of processes)

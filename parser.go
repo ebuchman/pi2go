@@ -10,7 +10,7 @@ type parser struct {
 
 	peekCount int // 1 if we've peeked
 
-	P *Process // top level concurrent processes
+	P *Process // top level process
 }
 
 func Parse(input string) *parser {
@@ -19,6 +19,7 @@ func Parse(input string) *parser {
 		l: l,
 		P: new(Process),
 	}
+	p.parseProcess(p.P, true, true)
 	return p
 }
 
@@ -45,11 +46,7 @@ func (p *parser) backup() {
 	p.peekCount = 1
 }
 
-func (p *parser) run() {
-	p.parseProcess(p.P, true, true)
-}
-
-func (p *parser) expect(typ tokenType) token {
+func (p *parser) expect(typ TokenType) token {
 	t := p.next()
 	if t.typ != typ {
 		start, fin := 0, len(p.l.input) // assumes only one line!
@@ -67,26 +64,42 @@ func (p *parser) expect(typ tokenType) token {
 	return t
 }
 
+//------------------------------------------------------------------------
+
 // parse possibly concurrent processes
 func (p *parser) parseProcess(proc *Process, acceptChoice, acceptPar bool) {
-	proc1 := new(process)
+	proc1 := new(Process)
 
-	// a concurrent process is either 0, a sum, or in brackets
 	t := p.next()
 	switch t.typ {
 	case tokenZeroTy:
 		proc1.isZero = true
+	case tokenNewTy:
+		name := p.expect(tokenStringTy)
+		proc1.names = append(proc1.names, name.val)
+		for p.next().typ == tokenCommaTy {
+			name := p.expect(tokenStringTy)
+			proc1.names = append(proc1.names, name.val)
+		}
+		p.backup()
+		p.expect(tokenInTy)
+		p.parseProcess(proc1, true, true)
+	case tokenSelectTy:
+		p.expect(tokenLeftCurlBraceTy)
+		p.parseSum(proc1, true, acceptPar)
+		p.expect(tokenRightCurlBraceTy)
 	case tokenLeftBraceTy:
-		proc1.proc = new(Process)
-		p.parseProcess(proc1.proc, true, true)
+		p.parseProcess(proc1, true, true)
 		p.expect(tokenRightBraceTy)
 	default:
 		p.backup()
-		proc1.sum = new(sum)
-		p.parseSum(proc1.sum, acceptChoice, acceptPar)
+		preProc := new(PrefixProcess)
+		preProc.proc = new(Process)
+		p.parsePrefixProc(preProc)
+		proc1.sum = append(proc1.sum, preProc)
 	}
 
-	proc.Append(proc1)
+	proc.par = append(proc.par, proc1)
 
 	// if there's a "|", parse the next concurrent process
 	if acceptPar && p.peek().typ == tokenParTy {
@@ -95,10 +108,7 @@ func (p *parser) parseProcess(proc *Process, acceptChoice, acceptPar bool) {
 	}
 }
 
-func (p *parser) parseSum(s *sum, acceptChoice, acceptPar bool) {
-	proc := new(prefixedProcess)
-	proc.proc = new(Process)
-
+func (p *parser) parsePrefixProc(preProc *PrefixProcess) {
 	subject := p.expect(tokenStringTy)
 
 	var typ ActionType
@@ -117,30 +127,22 @@ func (p *parser) parseSum(s *sum, acceptChoice, acceptPar bool) {
 	p.expect(tokenRightBraceTy)
 	p.expect(tokenDotTy)
 
-	p.parseProcess(proc.proc, false, false)
+	preProc.action = &Action{typ, subject, object}
 
-	proc.action = &action{typ, subject, object}
+	p.parseProcess(preProc.proc, false, false)
 
-	s.Append(proc)
-
-	if acceptChoice && p.peek().typ == tokenChoiceTy {
-		p.next()
-		p.parseSum(s, acceptChoice, acceptPar)
-	}
 }
 
-/*
-func parseStateStart(p *parser) parseStateFunc {
-	t := p.next()
-	// scan past spaces, new lines, and comments
-	switch t.typ {
-	case tokenErrTy:
-		return nil
-	case tokenNewLineTy, tokenSpaceTy:
-		return parseStateStart
-	case tokenPoundTy:
-		return parseStateComment
-	}
+func (p *parser) parseSum(sp *Process, acceptChoice, acceptPar bool) {
+	preProc := new(PrefixProcess)
+	preProc.proc = new(Process)
 
-	return parseStateProcess
-}*/
+	p.parsePrefixProc(preProc)
+
+	sp.sum = append(sp.sum, preProc)
+
+	if acceptChoice && p.peek().typ == tokenSemiColonTy {
+		p.next()
+		p.parseSum(sp, acceptChoice, acceptPar)
+	}
+}

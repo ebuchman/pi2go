@@ -27,7 +27,7 @@ type lexer struct {
 
 // a token
 type token struct {
-	typ tokenType
+	typ TokenType
 	val string
 
 	loc location
@@ -97,11 +97,15 @@ func (l *lexer) peek() string {
 	return s
 }
 
+func (l *lexer) rawToken() string {
+	return l.input[l.start:l.pos]
+}
+
 // consume a token and push out on the channel
-func (l *lexer) emit(ty tokenType) {
+func (l *lexer) emit(ty TokenType) {
 	l.tokens <- token{
 		typ: ty,
-		val: l.input[l.start:l.pos],
+		val: l.rawToken(),
 		loc: location{
 			line: l.line,
 			col:  l.pos - l.lastNewLine,
@@ -140,6 +144,18 @@ func lexStateStart(l *lexer) lexStateFunc {
 	case tokenRightBrace:
 		l.emit(tokenRightBraceTy)
 		return lexStateStart
+	case tokenLeftSquareBrace:
+		l.emit(tokenLeftSquareBraceTy)
+		return lexStateStart
+	case tokenRightSquareBrace:
+		l.emit(tokenRightSquareBraceTy)
+		return lexStateStart
+	case tokenLeftCurlBrace:
+		l.emit(tokenLeftCurlBraceTy)
+		return lexStateStart
+	case tokenRightCurlBrace:
+		l.emit(tokenRightCurlBraceTy)
+		return lexStateStart
 	case tokenNewLine:
 		return lexStateNewLine
 	case tokenPound:
@@ -159,6 +175,15 @@ func lexStateStart(l *lexer) lexStateFunc {
 		return lexStateStart
 	case tokenDot:
 		l.emit(tokenDotTy)
+		return lexStateStart
+	case tokenComma:
+		l.emit(tokenCommaTy)
+		return lexStateStart
+	case tokenSemiColon:
+		l.emit(tokenSemiColonTy)
+		return lexStateStart
+	case tokenEquals:
+		l.emit(tokenSemiColonTy)
 		return lexStateStart
 	case tokenZero:
 		l.emit(tokenZeroTy)
@@ -225,7 +250,20 @@ func lexStateString(l *lexer) lexStateFunc {
 	if !l.acceptRun(tokenChars) {
 		return l.Error("Expected a string")
 	}
-	l.emit(tokenStringTy)
+	switch l.rawToken() {
+	case tokenTau:
+		l.emit(tokenTauTy)
+	case tokenEpsilon:
+		l.emit(tokenTauTy)
+	case tokenNew:
+		l.emit(tokenNewTy)
+	case tokenIn:
+		l.emit(tokenInTy)
+	case tokenSelect:
+		l.emit(tokenSelectTy)
+	default:
+		l.emit(tokenStringTy)
+	}
 	return lexStateStart
 }
 

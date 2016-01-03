@@ -1,4 +1,4 @@
-package parse
+package pi2go
 
 // This lexer is heavily inspired by Rob Pike's "Lexical Scanning in Go"
 

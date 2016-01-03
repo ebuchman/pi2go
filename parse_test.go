@@ -1,4 +1,4 @@
-package parse
+package pi2go
 
 import (
 	"bytes"

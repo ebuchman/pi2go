@@ -10,7 +10,7 @@ type parser struct {
 
 	peekCount int // 1 if we've peeked
 
-	P *Process
+	P *Process // top level concurrent processes
 }
 
 func Parse(input string) *parser {
@@ -86,7 +86,7 @@ func (p *parser) parseProcess(proc *Process, acceptChoice, acceptPar bool) {
 		p.parseSum(proc1.sum, acceptChoice, acceptPar)
 	}
 
-	proc.processes = append(proc.processes, proc1)
+	proc.Append(proc1)
 
 	// if there's a "|", parse the next concurrent process
 	if acceptPar && p.peek().typ == tokenParTy {
@@ -97,7 +97,7 @@ func (p *parser) parseProcess(proc *Process, acceptChoice, acceptPar bool) {
 
 func (p *parser) parseSum(s *sum, acceptChoice, acceptPar bool) {
 	proc := new(prefixedProcess)
-	proc.process = new(Process)
+	proc.proc = new(Process)
 
 	subject := p.expect(tokenStringTy)
 
@@ -117,11 +117,11 @@ func (p *parser) parseSum(s *sum, acceptChoice, acceptPar bool) {
 	p.expect(tokenRightBraceTy)
 	p.expect(tokenDotTy)
 
-	p.parseProcess(proc.process, false, false)
+	p.parseProcess(proc.proc, false, false)
 
 	proc.action = &action{typ, subject, object}
 
-	s.processes = append(s.processes, proc)
+	s.Append(proc)
 
 	if acceptChoice && p.peek().typ == tokenChoiceTy {
 		p.next()

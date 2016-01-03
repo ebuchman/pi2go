@@ -5,8 +5,20 @@ import (
 	"io"
 )
 
-type Process struct {
-	processes []*process // concurrent processes
+//------------------------
+// process tree
+
+type Process []*process // concurrent processes
+
+func (p *Process) Append(proc ...*process) {
+	*p = append(*p, proc...)
+}
+
+func (p *Process) Len() int {
+	if p == nil {
+		return 0
+	}
+	return len(*p)
 }
 
 type process struct {
@@ -15,13 +27,22 @@ type process struct {
 	proc   *Process // if its a process in brackets
 }
 
-type sum struct {
-	processes []*prefixedProcess
+type sum []*prefixedProcess
+
+func (s *sum) Append(proc ...*prefixedProcess) {
+	*s = append(*s, proc...)
+}
+
+func (s *sum) Len() int {
+	if s == nil {
+		return 0
+	}
+	return len(*s)
 }
 
 type prefixedProcess struct {
-	action  *action
-	process *Process
+	action *action
+	proc   *Process
 }
 
 // an action either sends or receives on a channel
@@ -71,27 +92,28 @@ func (p printer) PrintParser(parser *parser) {
 func (p printer) printPrefixProcess(proc *prefixedProcess, prefixed bool) {
 	p.Printf(proc.action.String())
 	p.Printf(".")
-	p.printParallelProcess(proc.process, true)
+	p.printParallelProcess(proc.proc, true)
 }
 
 func (p printer) printProcess(proc *process, prefixed bool) {
 	if proc.isZero {
 		p.Printf("0")
-	} else if proc.sum != nil && len(proc.sum.processes) > 0 {
-		if prefixed && len(proc.sum.processes) > 1 {
+	} else if proc.sum.Len() > 0 {
+		if prefixed && proc.sum.Len() > 1 {
 			p.Printf("( ")
 		}
-		p.printPrefixProcess(proc.sum.processes[0], prefixed)
-		if len(proc.sum.processes) > 1 {
-			for _, _proc := range proc.sum.processes[1:] {
+		sum := *proc.sum
+		p.printPrefixProcess(sum[0], prefixed)
+		if proc.sum.Len() > 1 {
+			for _, _proc := range sum[1:] {
 				p.Printf(" + ")
 				p.printPrefixProcess(_proc, true)
 			}
 		}
-		if prefixed && len(proc.sum.processes) > 1 {
+		if prefixed && proc.sum.Len() > 1 {
 			p.Printf(" )")
 		}
-	} else if proc.proc != nil && len(proc.proc.processes) > 0 {
+	} else if proc.proc.Len() > 0 {
 		p.printParallelProcess(proc.proc, prefixed)
 	} else {
 		panic("wtf")
@@ -99,12 +121,12 @@ func (p printer) printProcess(proc *process, prefixed bool) {
 }
 
 func (p printer) printParallelProcess(proc *Process, prefixed bool) {
-	if len(proc.processes) > 1 {
+	if proc.Len() > 1 {
 		p.Printf("( ")
 	}
-	p.printProcess(proc.processes[0], prefixed)
-	if len(proc.processes) > 1 {
-		for _, _proc := range proc.processes[1:] {
+	p.printProcess((*proc)[0], prefixed)
+	if proc.Len() > 1 {
+		for _, _proc := range (*proc)[1:] {
 			p.Printf(" | ")
 			p.printProcess(_proc, prefixed)
 		}

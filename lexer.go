@@ -197,8 +197,6 @@ func lexStateStart(l *lexer) lexStateFunc {
 	}
 
 	return lexStateExpressions
-
-	return nil
 }
 
 func isSpace(s string) bool {
@@ -209,7 +207,7 @@ func lexStateExpressions(l *lexer) lexStateFunc {
 	s := l.next()
 
 	// check for chars
-	if strings.Contains(tokenChars, s) {
+	if strings.Contains(tokenChar, s) {
 		l.backup()
 		return lexStateString
 	}
@@ -247,10 +245,11 @@ func lexStateComment(l *lexer) lexStateFunc {
 
 // a string
 func lexStateString(l *lexer) lexStateFunc {
-	if !l.acceptRun(tokenChars) {
+	if !l.acceptRun(tokenChar) {
 		return l.Error("Expected a string")
 	}
-	switch l.rawToken() {
+	t := l.rawToken()
+	switch t {
 	case tokenTau:
 		l.emit(tokenTauTy)
 	case tokenEpsilon:
@@ -262,7 +261,14 @@ func lexStateString(l *lexer) lexStateFunc {
 	case tokenSelect:
 		l.emit(tokenSelectTy)
 	default:
-		l.emit(tokenStringTy)
+		if isNameTy(t) {
+			l.emit(tokenNameTy)
+		} else if isCapsTy(t) {
+			l.emit(tokenCapsIDTy)
+		} else {
+			// XXX: this is unexpected ...
+			l.emit(tokenStringTy)
+		}
 	}
 	return lexStateStart
 }
@@ -271,4 +277,18 @@ func lexStateString(l *lexer) lexStateFunc {
 func lexStateErr(l *lexer) lexStateFunc {
 	l.emit(tokenErrTy)
 	return nil
+}
+
+func isNameTy(t string) bool {
+	if strings.Contains(tokenLower, t[0:1]) {
+		return true
+	}
+	return false
+}
+
+func isCapsTy(t string) bool {
+	if strings.Contains(tokenUpper, t[0:1]) {
+		return true
+	}
+	return false
 }

@@ -54,6 +54,8 @@ const (
 	tokenNewTy     // new
 	tokenInTy      // in
 	tokenSelectTy  // select
+	tokenNameTy    // channel_Name
+	tokenCapsIDTy  // ProcDef
 )
 
 // tokens and special chars
@@ -84,5 +86,9 @@ var (
 	tokenIn      = "in"
 	tokenSelect  = "select"
 
-	tokenChars = "abcdefghijklmnopqrstuvwqyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_"
+	tokenLower  = "abcdefghijklmnopqrstuvwqyz"
+	tokenUpper  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	tokenLetter = tokenLower + tokenUpper
+	tokenDigit  = "1234567890"
+	tokenChar   = tokenLetter + tokenDigit + "_"
 )

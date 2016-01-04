@@ -23,12 +23,12 @@ process := 	0
 	| 	select{ prefix.process (';' prefix.process)* }
 	|	CapsID(namelist)
 	| 	( process )
+cmd := 'defproc' CapsID(namelist) = process ['and' CapsID(namelist) = process]*;
 
 ```
 
 # Roadmap
 - parse multiple lines (sequence of processes)
-- support process definitions
 - compiler
 
 

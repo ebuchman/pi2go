@@ -75,10 +75,10 @@ func (p *parser) parseProcess(proc *Process, acceptChoice, acceptPar bool) {
 	case tokenZeroTy:
 		proc1.isZero = true
 	case tokenNewTy:
-		name := p.expect(tokenStringTy)
+		name := p.expect(tokenNameTy)
 		proc1.names = append(proc1.names, name.val)
 		for p.next().typ == tokenCommaTy {
-			name := p.expect(tokenStringTy)
+			name := p.expect(tokenNameTy)
 			proc1.names = append(proc1.names, name.val)
 		}
 		p.backup()
@@ -91,12 +91,27 @@ func (p *parser) parseProcess(proc *Process, acceptChoice, acceptPar bool) {
 	case tokenLeftBraceTy:
 		p.parseProcess(proc1, true, true)
 		p.expect(tokenRightBraceTy)
-	default:
+	case tokenNameTy:
 		p.backup()
 		preProc := new(PrefixProcess)
 		preProc.proc = new(Process)
 		p.parsePrefixProc(preProc)
 		proc1.sum = append(proc1.sum, preProc)
+	case tokenCapsIDTy:
+		p.expect(tokenLeftBraceTy)
+		var names []string
+		t2 := p.next()
+		if t2.typ != tokenRightBraceTy {
+			// grab the list of names (possibly just one)
+			names = append(names, t2.val)
+			for p.peek().typ != tokenRightBraceTy {
+				p.expect(tokenCommaTy)
+				t2 = p.next()
+				names = append(names, t2.val)
+			}
+			p.expect(tokenRightBraceTy)
+		}
+		proc1.call = NewProcDefCall(t.val, names...)
 	}
 
 	proc.par = append(proc.par, proc1)
@@ -109,7 +124,7 @@ func (p *parser) parseProcess(proc *Process, acceptChoice, acceptPar bool) {
 }
 
 func (p *parser) parsePrefixProc(preProc *PrefixProcess) {
-	subject := p.expect(tokenStringTy)
+	subject := p.expect(tokenNameTy)
 
 	var typ ActionType
 	t := p.next()
@@ -123,7 +138,7 @@ func (p *parser) parsePrefixProc(preProc *PrefixProcess) {
 	}
 
 	p.expect(tokenLeftBraceTy)
-	object := p.expect(tokenStringTy)
+	object := p.expect(tokenNameTy)
 	p.expect(tokenRightBraceTy)
 	p.expect(tokenDotTy)
 

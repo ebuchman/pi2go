@@ -10,11 +10,25 @@ import (
 // process tree
 
 type Process struct {
-	isZero bool
-	names  []string
+	names []string // new names
 
-	sum []*PrefixProcess
-	par []*Process
+	// a process satisfies only one of these
+	isZero bool             // zero process
+	call   *ProcDefCall     // run a defined process
+	sum    []*PrefixProcess // non-deterministic choice
+	par    []*Process       // concurrent processes
+}
+
+type ProcDefCall struct {
+	ID   string
+	Args []string
+}
+
+func NewProcDefCall(id string, args ...string) *ProcDefCall {
+	return &ProcDefCall{
+		ID:   id,
+		Args: args,
+	}
 }
 
 type PrefixProcess struct {
@@ -64,7 +78,9 @@ func RecursivePrint(p *Process, i int) {
 		fmt.Println(tabs(i-1), p.names)
 	}
 
-	if len(p.sum) > 0 {
+	if p.call != nil {
+		fmt.Printf("%s(%s)\n", p.call.ID, strings.Join(p.call.Args, ","))
+	} else if len(p.sum) > 0 {
 		if len(p.sum) > 1 {
 			fmt.Printf("\n%s", tabs(i))
 		}
@@ -134,7 +150,9 @@ func (p printer) printProcess(proc *Process, prefixed bool) {
 		p.Printf("in")
 	}
 
-	if len(proc.sum) > 0 {
+	if proc.call != nil {
+		p.Printf("%s(%s)", proc.call.ID, strings.Join(proc.call.Args, ","))
+	} else if len(proc.sum) > 0 {
 		sumL := len(proc.sum)
 		if sumL > 1 {
 			p.Printf("select{")

@@ -10,16 +10,16 @@ type parser struct {
 
 	peekCount int // 1 if we've peeked
 
-	P *Process // top level process
+	P []*Process // top level process
 }
 
 func Parse(input string) *parser {
 	l := Lex(input)
 	p := &parser{
 		l: l,
-		P: new(Process),
+		P: []*Process{},
 	}
-	p.parseProcess(p.P, true, true)
+	p.parseProcesses()
 	return p
 }
 
@@ -66,12 +66,29 @@ func (p *parser) expect(typ TokenType) token {
 
 //------------------------------------------------------------------------
 
-// parse possibly concurrent processes
-func (p *parser) parseProcess(proc *Process, acceptChoice, acceptPar bool) {
-	proc1 := new(Process)
+func (p *parser) parseProcesses() {
 
+	// grab tokens from lexer until a defproc
+	// TODO handle new lines
 	t := p.next()
 	switch t.typ {
+	case tokenNewLineTy:
+		p.parseProcesses()
+	case tokenDefProcTy:
+		proc := new(Process)
+		p.P = append(p.P, proc)
+		for p.parseDefProc(proc, true, true) {
+			proc = new(Process)
+			p.P = append(p.P, proc)
+		}
+	}
+}
+
+func (p *parser) parseProcess(proc1 *Process) {
+	t := p.next()
+	switch t.typ {
+	case tokenNewLineTy:
+		parseProcess(proc1)
 	case tokenZeroTy:
 		proc1.isZero = true
 	case tokenNewTy:
@@ -113,13 +130,23 @@ func (p *parser) parseProcess(proc *Process, acceptChoice, acceptPar bool) {
 		}
 		proc1.call = NewProcDefCall(t.val, names...)
 	}
+}
+
+// parse possibly concurrent processes
+// returns true if it ends at an tokenAndTy
+// TODO: drop acceptChoice (select?!)
+func (p *parser) parseDefProc(proc *Process, acceptChoice, acceptPar bool) bool {
+	proc1 := new(Process)
+	p.parseProcess(proc1)
 
 	proc.par = append(proc.par, proc1)
+
+	// TODO:are we left at a semicolon or an and ?!
 
 	// if there's a "|", parse the next concurrent process
 	if acceptPar && p.peek().typ == tokenParTy {
 		p.next()
-		p.parseProcess(proc, acceptChoice, acceptPar)
+		p.parseDefProc(proc, acceptChoice, acceptPar)
 	}
 }
 

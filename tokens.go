@@ -55,7 +55,10 @@ const (
 	tokenInTy      // in
 	tokenSelectTy  // select
 	tokenNameTy    // channel_Name
-	tokenCapsIDTy  // ProcDef
+	tokenCapsIDTy  // process name (from a defproc)
+
+	tokenDefProcTy // defproc
+	tokenAndTy     // and
 )
 
 // tokens and special chars
@@ -85,6 +88,9 @@ var (
 	tokenNew     = "new"
 	tokenIn      = "in"
 	tokenSelect  = "select"
+
+	tokenDefProc = "defproc"
+	tokenAnd     = "and"
 
 	tokenLower  = "abcdefghijklmnopqrstuvwqyz"
 	tokenUpper  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

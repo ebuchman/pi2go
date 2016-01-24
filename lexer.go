@@ -260,6 +260,10 @@ func lexStateString(l *lexer) lexStateFunc {
 		l.emit(tokenInTy)
 	case tokenSelect:
 		l.emit(tokenSelectTy)
+	case tokenDefProc:
+		l.emit(tokenDefProcTy)
+	case tokenAnd:
+		l.emit(tokenAndTy)
 	default:
 		if isNameTy(t) {
 			l.emit(tokenNameTy)

@@ -8,7 +8,8 @@ import (
 func Compile(text string, w io.Writer) {
 	c := compiler{w}
 	p := Parse(text)
-	c.Compile(p.P)
+	_, _ = p, c
+	// c.Compile(p.P)
 }
 
 type compiler struct {

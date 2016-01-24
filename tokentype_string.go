@@ -4,9 +4,9 @@ package pi2go
 
 import "fmt"
 
-const _TokenType_name = "tokenErrTytokenEOFTytokenLeftBraceTytokenRightBraceTytokenLeftSquareBraceTytokenRightSquareBraceTytokenLeftCurlBraceTytokenRightCurlBraceTytokenNewLineTytokenPoundTytokenSpaceTytokenStringTytokenFireTytokenPullTytokenChoiceTytokenParTytokenDotTytokenCommaTytokenSemiColonTytokenEqualsTytokenZeroTytokenTauTytokenEpsilonTytokenNewTytokenInTytokenSelectTytokenNameTytokenCapsIDTy"
+const _TokenType_name = "tokenErrTytokenEOFTytokenLeftBraceTytokenRightBraceTytokenLeftSquareBraceTytokenRightSquareBraceTytokenLeftCurlBraceTytokenRightCurlBraceTytokenNewLineTytokenPoundTytokenSpaceTytokenStringTytokenFireTytokenPullTytokenChoiceTytokenParTytokenDotTytokenCommaTytokenSemiColonTytokenEqualsTytokenZeroTytokenTauTytokenEpsilonTytokenNewTytokenInTytokenSelectTytokenNameTytokenCapsIDTytokenDefProcTytokenAndTy"
 
-var _TokenType_index = [...]uint16{0, 10, 20, 36, 53, 75, 98, 118, 139, 153, 165, 177, 190, 201, 212, 225, 235, 245, 257, 273, 286, 297, 307, 321, 331, 340, 353, 364, 377}
+var _TokenType_index = [...]uint16{0, 10, 20, 36, 53, 75, 98, 118, 139, 153, 165, 177, 190, 201, 212, 225, 235, 245, 257, 273, 286, 297, 307, 321, 331, 340, 353, 364, 377, 391, 401}
 
 func (i TokenType) String() string {
 	if i < 0 || i+1 >= TokenType(len(_TokenType_index)) {
